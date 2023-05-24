@@ -30,11 +30,12 @@ export const useMapBox = (puntoInicial) => {
 
     // funcion para agregar marcadores memorizada
     const agregarMarcador = useCallback(
-        (ev) => {
-            const {lng, lat} = ev.lngLat
+
+        (ev, id) => {
+            const {lng, lat} = ev.lngLat || ev;
 
             const marker = new mapboxgl.Marker();
-            marker.id = v4();  // todo: si el marccador tiene id
+            marker.id = id ?? v4();
 
             marker
                 .setLngLat([lng, lat])
@@ -44,14 +45,15 @@ export const useMapBox = (puntoInicial) => {
             // asiganamos al objeto de markadores
             marcadores.current[marker.id] = marker;
 
+            // si el marcador tiene ID no emitir
+            if(!id){
+                nuevoMarcador.current.next( {
+                    id: marker.id,
+                    lng,
+                    lat
+                } )
+            }
 
-
-            // todo: si el marcador tiene ID no emitir
-            nuevoMarcador.current.next( {
-                id: marker.id,
-                lng,
-                lat
-            } )
 
             // Escuchar mobimientos del marcador
             marker.on('drag', ({target}) => {
@@ -65,6 +67,15 @@ export const useMapBox = (puntoInicial) => {
                 })
             })
 
+        },
+        [],
+    );
+
+
+    // funcion para actualizar la ubicacion del marcador
+    const actualizarPosicion = useCallback(
+        ({id,lng,lat}) => {
+            marcadores.current[id].setLngLat([lng,lat])
         },
         [],
     );
@@ -106,6 +117,7 @@ export const useMapBox = (puntoInicial) => {
 
 
     return {
+        actualizarPosicion,
         agregarMarcador,
         coords,
         marcadores,
